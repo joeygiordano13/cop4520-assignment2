@@ -1,8 +1,6 @@
 #include <atomic>
 #include <vector>
 #include <thread>
-#include <cstdint>
-#include <fstream>
 #include <iostream>
 #include <array>
 
@@ -65,7 +63,7 @@ void LabyrinthRun(int id) {
                 if (cupcakePlaced && !cupcakeEaten[active_thread_id]) {
                     cupcakePlaced = false; // eat cupcake
                     cupcakeEaten[active_thread_id] = true;
-                    std::cout << "Guest " << active_thread_id << "ate a cupcake." << std::endl;
+                    std::cout << "Guest " << active_thread_id << " ate a cupcake." << std::endl;
                 }
             }
         }
@@ -86,7 +84,7 @@ int main() {
     tStart = clock();
 
     // Start threads
-    for (int i = 0; i < NUM_GUESTS; i++) {
+    for (size_t i = 0; i < NUM_GUESTS; i++) {
         threads[i] = std::thread(LabyrinthRun, i);
     }
 

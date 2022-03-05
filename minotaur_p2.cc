@@ -1,17 +1,12 @@
 #include <atomic>
-#include <vector>
 #include <thread>
-#include <cstdint>
-#include <fstream>
 #include <iostream>
 #include <array>
+#include <chrono>
 
 #define NUM_GUESTS 25
 
-enum RoomState {
-    available = true;
-    busy = false;
-};
+enum State { available, busy };
 
 // SpinLock class
 class SpinLock {
@@ -35,43 +30,39 @@ class SpinLock {
 // Make spinlock and counts.
 SpinLock sl;
 int count = 0; 
-// Track active threads.
-int active_thread_id = -1;
 // Track which guests have looked at vase.
-std::vector<bool> cupcakeEaten(NUM_GUESTS);
+std::array<bool, NUM_GUESTS> ponderedVase{};
+State vaseState = State::available;
 
-void LookAtMinotaursVase(int id) {
+void PonderMinotaursVase(int id) {
+    // Allow for a guest to potentially enter room multiple times.
+    while (count < NUM_GUESTS) {
+        sl.lock();
+        if (vaseState == State::available) {
+            if (!ponderedVase[id]) {
+                vaseState = State::busy;
+                std::cout << "Guest ID: " << id << " is pondering the vase." << std::endl;
+                // Stop the thread to allow guest up to 500ms to ponder vase.
+                std::this_thread::sleep_for(std::chrono::milliseconds(rand() % 500));
+                // Make vase available again.
+                ponderedVase[id] = true;
+                vaseState = State::available;
+                // Number of guests who have seen vase.
+                count++;
+            }
+            else {
+                vaseState = State::busy;
+                std::cout << "Guest ID: " << id << " is pondering the vase, again...!" << std::endl;
+                // Give the repeat-viewers less time to stare at vase. 
+                std::this_thread::sleep_for(std::chrono::milliseconds(rand() % 100));
+                // Make vase available again, don't update count.
+                vaseState = State::available;
+            }
+        }
+        sl.unlock();
+    }
 
-    // TODO: add new code here.
-    // while (count < NUM_GUESTS) {
-    //     sl.lock();
-    //     if (id == active_thread_id) {
-    //         // If guest is the leader, 
-    //         // it will check the cupcake
-    //         if (active_thread_id == LEADER) {
-    //             if (cupcakePlaced && !cupcakeEaten[active_thread_id]) {
-    //                 cupcakePlaced = false; // eat cupcake
-    //                 cupcakeEaten[active_thread_id] = true;
-    //                 std::cout << "Leader ate a cupcake." << std::endl;
-    //             }
-    //             else if (!cupcakePlaced) {
-    //                 count++;
-    //                 cupcakePlaced = true;
-    //                 std::cout << "The leader incremented the number of guests to " << count << "." << std::endl;
 
-    //             }
-    //         }
-    //         // Regular guest exits labyrinth.
-    //         else {
-    //             if (cupcakePlaced && !cupcakeEaten[active_thread_id]) {
-    //                 cupcakePlaced = false; // eat cupcake
-    //                 cupcakeEaten[active_thread_id] = true;
-    //                 std::cout << "Guest " << active_thread_id << "ate a cupcake." << std::endl;
-    //             }
-    //         }
-    //     }
-    //     sl.unlock();
-    // }
 }
 
 // Problem 2: 
@@ -79,27 +70,16 @@ void LookAtMinotaursVase(int id) {
 // indicating when the showroom is available. The sign would read “AVAILABLE” or “BUSY.” Every guest 
 // is responsible to set the sign to “BUSY” when entering the showroom and back to “AVAILABLE” upon exit. 
 // That way guests would not bother trying to go to the showroom if it is not available.
-
-// A: Of the three choices this is the ideal strategy because it doesn't require that guests simply wait at
-// the door in a queue or have the thread become inactive/off/sleeping.
-
 int main() {
     // Allocate threads
-    std::vector<std::thread> threads;
-    threads.reserve(NUM_GUESTS);
-    int id = -1;
+    std::array<std::thread, NUM_GUESTS> threads{};
 
     int tStart, tEnd;
     tStart = clock();
 
     // Start threads
-    for (int i = 0; i < NUM_GUESTS; i++) {
-        threads[i] = std::thread(LabyrinthRun, i);
-    }
-
-    // Minotaur requests a random guest, which activates a thread.
-    while (count < NUM_GUESTS) {
-        active_thread_id = rand() % NUM_GUESTS; // random guest
+    for (size_t i = 0; i < NUM_GUESTS; i++) {
+        threads[i] = std::thread(PonderMinotaursVase, i);
     }
 
     // Join threads
@@ -108,8 +88,7 @@ int main() {
     }
 
     tEnd = clock();
+    std::cout << "All guests have viewed the Minotaur's vase! Count " << count << "." << std::endl;
     std::cout << "execution time: " << (tEnd - tStart)/double(CLOCKS_PER_SEC) << std::endl;
-    // Clear threads
-    threads.clear();
     return 0;
 }
