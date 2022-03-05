@@ -1,6 +1,21 @@
 # cop4520-assignment2
 
+To run code: 
+
+gcc/g++ <filename> 
+./a.out
+
+
 Problem 1:
+This problem is a version of the N prisoners problem. The algorithm that the guests
+must utilize requires that a guest be designated as the leader. The leader can effectively
+count the number of guests by incrementing a global counter whenever they revisit the party
+room with the cupcake. The cupcake mimics the light in the prisoner problem, as it will indicate
+whether a new guest has ate a cupcake when it was there in the period that the leader was gone. 
+The guests know whether to take or leave the cupcake based on if they've already had one. Once
+incrementing their count, only the leader can replace a cupcake (request from the servants).
+  
+The code runs well under a second. T: 0.006112 ms
 
 Problem 2: 
 Choice 2) The Minotaur’s second strategy allowed the guests to place a sign on the door 
