@@ -2,7 +2,7 @@
 
 **To run code**: 
 ```
-gcc/g++ <filename> 
+gcc/g++ <filename>  -pthread
 ./a.out
 ```
 
